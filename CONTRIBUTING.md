@@ -1,25 +1,25 @@
 # Contributing
 
-본 프로젝트의 커밋 / 브랜치 / PR 컨벤션. 1인 운영이지만 portfolio 어필 + 운영 감각 어필 위해 표준 패턴을 따릅니다.
+본 프로젝트의 커밋 / 브랜치 / PR 컨벤션. 1인 운영이지만 운영 감각을 갖추고자 표준 패턴을 따릅니다.
 
 ## 커밋 메시지 — Conventional Commits
 
 ```
-<type>(<scope>): <subject 50자 이내, 명령형>
+<type>(<scope>): <제목 50자 이내, 명령형>
 
-<body — why 중심, 72자 wrap>
+<본문 — 왜 했는지 중심, 72자 wrap>
 
 Refs: <plan/spec 경로 또는 issue>
 ```
 
-### type (10종 표준)
+### type (10종 표준 — 영어 그대로 사용)
 
 | type | 사용 예 |
 |---|---|
 | `feat` | 새 기능 / 새 파이프라인 / 새 모델 |
 | `fix` | 버그 수정 |
 | `chore` | 빌드 / 도구 / 설정 변경 (코드 외) |
-| `docs` | 문서 (README / runbook / portfolio / troubleshooting) |
+| `docs` | 문서 (README / runbook / 포트폴리오 / 트러블슈팅) |
 | `refactor` | 동작 변화 없는 구조 변경 |
 | `test` | 테스트 추가 / 수정 |
 | `perf` | 성능 개선 |
@@ -27,37 +27,41 @@ Refs: <plan/spec 경로 또는 issue>
 | `build` | 의존성 (uv / pyproject / package.json) |
 | `revert` | 이전 commit 되돌림 |
 
-### scope (본 프로젝트 영역)
+### scope (본 프로젝트 영역 — 영어 그대로)
 
 `kafka` `flink` `dbt` `infra` `producers` `api` `web` `lakekeeper` `postgres` `scripts` `cdc` `iceberg` `spark` `cloudflare` `env` `slo`
 
-너무 작은 변경은 scope 생략 가능 (`docs: typo`).
+너무 작은 변경은 scope 생략 가능 (`docs: 오타 수정`).
 
-### Subject 규칙
+### 제목 규칙
+
 - 50자 이내
-- 명령형 (`add` / `fix` — `added` / `fixed` X)
-- 끝 마침표 X
-- 한국어 / 영어 자유 (영어 우선 권장 — git tooling 친화적)
+- 명령형 (`추가` / `수정` 같은 동사 종결)
+- 끝에 마침표 X
+- **type / scope 만 영어**, 나머지는 한국어로 작성
 
-### Body 규칙
+### 본문 규칙
+
 - 72자 wrap
 - "왜" 중심 (무엇은 diff 가 보여줌)
-- bullet (`-`) 자유
-- review 가 발견한 이슈를 fix 한 commit 은 review 코멘트 요지 / 재현 방법 / 해결 방식 명시
+- bullet (`-`) 자유롭게
+- 리뷰가 발견한 이슈를 fix 한 commit 은 리뷰 코멘트 요지 / 재현 방법 / 해결 방식을 명시
 
 ### 예시
 
-좋음:
-```
-fix(kafka): use grep -Fxq for fixed-string topic match
+좋은 예:
 
-Previous "^${name}$" treats '.' as regex metachar; e.g. grep would
-falsely match 'seoul_hotspot_congestion_v1' against
-'^seoul.hotspot.congestion.v1$'. -Fx anchors entire line as a literal
-string, eliminating the regex injection without escaping each dot.
+```
+fix(kafka): topic 매칭 시 grep -Fxq 사용
+
+기존 "^${name}$" 패턴은 '.' 를 정규식 메타문자로 해석해
+'seoul_hotspot_congestion_v1' 같은 언더스코어 변형도
+'^seoul.hotspot.congestion.v1$' 와 매치됨. -Fx 로 한 줄 전체를
+literal string 으로 처리해 정규식 주입 자체를 차단.
 ```
 
-나쁨:
+나쁜 예:
+
 ```
 fixed bug
 ```
@@ -69,6 +73,7 @@ phase-<phase>/day-<n>-<short-desc>
 ```
 
 예시:
+
 - `phase-1a/day-1-infra`
 - `phase-1a/day-2-producers`
 - `phase-1a/day-3-bronze-silver`
@@ -83,6 +88,7 @@ phase-<phase>/day-<n>-<short-desc>
 - ...
 
 특수 패턴 (필요 시):
+
 - `fix/<short>` — main 핫픽스
 - `docs/<short>` — 문서 단독
 - `refactor/<short>` — 큰 구조 변경
@@ -90,58 +96,66 @@ phase-<phase>/day-<n>-<short-desc>
 ## PR 컨벤션
 
 ### 단위 — Day 단위 PR
+
 plan 의 매 Day 종료 게이트가 자연스러운 PR merge 지점. PR 1개 = Day 1개.
 
 ### 제목
-Conventional Commits 형식 그대로. squash merge 시 main commit message 가 됨.
+
+Conventional Commits 형식 그대로. squash merge 시 main commit 메시지가 됨.
 
 ```
 feat(infra): Day 1 — kafka kraft + lakekeeper + minio + healthcheck
 ```
 
-### Description
-`.github/PULL_REQUEST_TEMPLATE.md` 사용. 핵심 섹션:
-1. **Summary** — 무엇을 / 왜
-2. **Day Gate** — plan 의 종료 게이트 체크리스트
-3. **Changes** — bullet
-4. **Testing** — 명령 + 출력
-5. **Deviations from plan** — plan 본문과 달라진 부분 + 이유 (portfolio 어필 자료)
-6. **Risk / Rollback**
-7. **Checklist** — secrets / tests / docs / backward compat
+### 본문
 
-### Size 가이드
-- ≤ 400 lines diff: 작음 (이상적)
+`.github/PULL_REQUEST_TEMPLATE.md` 사용. 핵심 섹션 (모두 한글 소제목):
+
+1. **요약** — 무엇을 / 왜 (bullet 으로 가독성 우선)
+2. **Day 종료 게이트** — plan 종료 게이트 체크리스트
+3. **변경 사항** — bullet
+4. **검증** — 명령 + 출력
+5. **계획 대비 편차** — plan 본문과 달라진 부분 + 이유
+6. **리스크 / 롤백**
+7. **체크리스트** — secrets / tests / docs / backward compat
+
+### 크기 가이드
+
+- 400 lines diff 이하: 작음 (이상적)
 - 400~1000: 중간 (분할 고려)
 - 1000+: 큰 PR (분할 권장, 어려우면 description 에 분할 어려운 이유)
 
 ### Merge 정책
-**Squash merge**. main 에 Day 단위 1 commit 만 들어감. PR 페이지에 squash 전 commit + review 코멘트 영구 보존.
 
-### Self-review
-1인 프로젝트라도 PR 생성 후 본인이 commit 단위로 review 코멘트 / check 표 남기기. portfolio 어필.
+**Squash merge**. main 에 Day 단위 1 commit 만 들어감. PR 페이지에 squash 전 commit + 리뷰 코멘트 영구 보존.
 
-## 트러블 슈팅 기록
+### 셀프 리뷰
 
-| 위치 | 어떤 트러블 슈팅 | detail |
+1인 프로젝트라도 PR 생성 후 본인이 commit 단위로 리뷰 코멘트 / 체크 표 남기기.
+
+## 트러블슈팅 기록
+
+| 위치 | 어떤 트러블슈팅 | 분량 |
 |---|---|---|
-| Commit body | 그 commit 이 직접 해결한 이슈 | 5~15줄 |
-| PR description "Deviations" | 그 PR 의 plan 대비 차이 | 표 또는 bullet |
+| Commit 본문 | 그 commit 이 직접 해결한 이슈 | 5~15줄 |
+| PR description "계획 대비 편차" | 그 PR 의 plan 대비 차이 | 표 또는 bullet |
 | `docs/portfolio/troubleshooting/<date>-<topic>.md` | 큰 이슈 (의사결정 얽힌 것) | 1~2 페이지 |
 | `docs/portfolio/phase1a_v1.md` (Day 10) | 가장 임팩트 큰 3~5건 정제판 | 짧게 |
 
-별도 troubleshooting 문서가 가치 있는 기준:
+별도 트러블슈팅 문서가 가치 있는 기준:
+
 - spec / docs 와 reality 의 gap
 - 의사결정 trade-off 가 있는 fix
 - 운영 중 재발 가능성 있는 이슈
 
-단순 typo / 1줄 fix 는 별도 문서 불필요.
+단순 오타 / 1줄 fix 는 별도 문서 불필요.
 
 ## 보안 / 거버넌스
 
-- `.env` / credentials / VAPID 키 commit 금지 (`.gitignore` 가 차단)
+- `.env` / credentials / VAPID 키는 commit 금지 (`.gitignore` 가 차단)
 - `git push --force` / `--no-verify` 사용 금지 (사용자 명시 승인 시만)
 - main 으로 직접 push 금지 — 모든 변경은 PR 경유
-- Cloudflare 배포는 사용자 직접 (subagent 자동화 X)
+- Cloudflare 배포는 사용자 직접 진행 (subagent 자동화 X)
 
 ## 참고 문서
 
