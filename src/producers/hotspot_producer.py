@@ -27,6 +27,23 @@ TOPIC = "seoul.hotspot.congestion.v1"
 SEOUL_API_BASE = "http://openapi.seoul.go.kr:8088"
 
 
+def _unwrap_first(x: Any) -> dict[str, Any]:
+    """list 이면 첫 원소, dict 이면 그대로, 그 외는 빈 dict 반환.
+
+    첫 원소가 dict 가 아닌 경우 structured warning 을 남겨 스키마
+    드리프트를 즉시 감지할 수 있게 한다.
+    """
+    if isinstance(x, list):
+        if x and isinstance(x[0], dict):
+            return x[0]
+        if x:
+            log.warning("stts_unexpected_first_element", type=type(x[0]).__name__)
+        return {}
+    if isinstance(x, dict):
+        return x
+    return {}
+
+
 def parse_hotspot_payload(payload: dict[str, Any], area_code: str) -> HotspotEvent | None:
     result = payload.get("RESULT", {})
     code = result.get("RESULT.CODE") or result.get("CODE")
@@ -37,9 +54,9 @@ def parse_hotspot_payload(payload: dict[str, Any], area_code: str) -> HotspotEve
     if not isinstance(citydata, dict):
         return None
 
-    live = citydata.get("LIVE_PPLTN_STTS", {}) or {}
-    road = ((citydata.get("ROAD_TRAFFIC_STTS") or {}).get("AVG_ROAD_DATA")) or {}
-    weather = citydata.get("WEATHER_STTS", {}) or {}
+    live = _unwrap_first(citydata.get("LIVE_PPLTN_STTS"))
+    road = _unwrap_first(_unwrap_first(citydata.get("ROAD_TRAFFIC_STTS")).get("AVG_ROAD_DATA"))
+    weather = _unwrap_first(citydata.get("WEATHER_STTS"))
 
     pttm = live.get("PPLTN_TIME")
     if not pttm:
