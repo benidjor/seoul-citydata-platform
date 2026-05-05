@@ -1,5 +1,7 @@
 from datetime import UTC, datetime
 
+import pytest
+
 from producers.hotspot_producer import parse_hotspot_payload
 from producers.schemas import HotspotEvent
 
@@ -36,3 +38,28 @@ def test_hotspot_event_kafka_headers_includes_api_response_ts(hotspot_sample):
     # 헤더는 bytes
     assert headers["api_response_ts"] == b"2026-04-30T14:25:00"
     assert headers["schema_version"] == b"v1"
+
+
+def test_parse_with_list_live_ppltn_stts(hotspot_real_sample):
+    """실 API 는 LIVE_PPLTN_STTS 를 단일 원소 list 로 반환한다."""
+    event = parse_hotspot_payload(hotspot_real_sample, area_code="POI001")
+    assert event is not None
+    assert isinstance(event, HotspotEvent)
+    assert event.congest_level == "붐빔"
+    assert event.population_min == 42000
+
+
+def test_parse_with_list_road_traffic_stts(hotspot_real_sample):
+    """실 API 는 ROAD_TRAFFIC_STTS 를 단일 원소 list 로 반환한다."""
+    event = parse_hotspot_payload(hotspot_real_sample, area_code="POI001")
+    assert event is not None
+    assert event.road_traffic_index == "서행"
+    assert event.road_traffic_speed_kmh == pytest.approx(18.4)
+
+
+def test_parse_with_list_weather_stts(hotspot_real_sample):
+    """실 API 는 WEATHER_STTS 를 단일 원소 list 로 반환한다."""
+    event = parse_hotspot_payload(hotspot_real_sample, area_code="POI001")
+    assert event is not None
+    assert event.temperature_c == pytest.approx(21.3)
+    assert event.precipitation == "없음"
