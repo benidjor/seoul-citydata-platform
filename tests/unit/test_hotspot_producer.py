@@ -40,26 +40,35 @@ def test_hotspot_event_kafka_headers_includes_api_response_ts(hotspot_sample):
     assert headers["schema_version"] == b"v1"
 
 
-def test_parse_with_list_live_ppltn_stts(hotspot_real_sample):
-    """실 API 는 LIVE_PPLTN_STTS 를 단일 원소 list 로 반환한다."""
-    event = parse_hotspot_payload(hotspot_real_sample, area_code="POI001")
+def test_parse_with_list_live_ppltn_stts(hotspot_list_live_only):
+    """LIVE_PPLTN_STTS 만 list 인 경우 혼잡도·인구 필드를 정상 파싱한다."""
+    event = parse_hotspot_payload(hotspot_list_live_only, area_code="POI001")
     assert event is not None
     assert isinstance(event, HotspotEvent)
     assert event.congest_level == "붐빔"
     assert event.population_min == 42000
 
 
-def test_parse_with_list_road_traffic_stts(hotspot_real_sample):
-    """실 API 는 ROAD_TRAFFIC_STTS 를 단일 원소 list 로 반환한다."""
-    event = parse_hotspot_payload(hotspot_real_sample, area_code="POI001")
+def test_parse_with_list_road_traffic_stts(hotspot_list_road_only):
+    """ROAD_TRAFFIC_STTS 만 list 인 경우 도로 필드를 정상 파싱한다."""
+    event = parse_hotspot_payload(hotspot_list_road_only, area_code="POI001")
     assert event is not None
     assert event.road_traffic_index == "서행"
     assert event.road_traffic_speed_kmh == pytest.approx(18.4)
 
 
-def test_parse_with_list_weather_stts(hotspot_real_sample):
-    """실 API 는 WEATHER_STTS 를 단일 원소 list 로 반환한다."""
-    event = parse_hotspot_payload(hotspot_real_sample, area_code="POI001")
+def test_parse_with_list_weather_stts(hotspot_list_weather_only):
+    """WEATHER_STTS 만 list 인 경우 기상 필드를 정상 파싱한다."""
+    event = parse_hotspot_payload(hotspot_list_weather_only, area_code="POI001")
     assert event is not None
     assert event.temperature_c == pytest.approx(21.3)
     assert event.precipitation == "없음"
+
+
+def test_parse_with_all_stts_as_list(hotspot_real_sample):
+    """실 API 형태(세 *_STTS 모두 list)에서 전체 파싱이 정상 동작한다 — smoke test."""
+    event = parse_hotspot_payload(hotspot_real_sample, area_code="POI001")
+    assert event is not None
+    assert event.congest_level == "붐빔"
+    assert event.road_traffic_index == "서행"
+    assert event.temperature_c == pytest.approx(21.3)
