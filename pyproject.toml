@@ -16,8 +16,14 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# flink: PyFlink 1.20 의 transitive dep apache-beam 2.48 setup.py 가 pkg_resources +
+# bdist_wheel 을 사용하는데, setuptools 70+ 는 pkg_resources 를 deprecate 처리하므로
+# build 단계에서 main venv 의 setuptools<70 + wheel 로 우회한다.
+# (자세한 사유 — commit 54f4399 + tool.uv.no-build-isolation-package 설정 참고.)
 flink = [
     "apache-flink==1.20.0",
+    "setuptools>=65,<70",
+    "wheel>=0.41",
 ]
 dev = [
     "pytest>=8.3",
@@ -29,6 +35,7 @@ dev = [
 
 [tool.uv]
 package = true
+no-build-isolation-package = ["apache-beam"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/platform_common", "src/producers", "src/flink_jobs"]
