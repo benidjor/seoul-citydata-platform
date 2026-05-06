@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
+# 본 파일 위치 = src/flink_jobs/lib/region_lookup.py → parents[3] = repo root.
+# lib 하위 추가 중첩 / 파일 이동 시 parents 인덱스 재검토 필요.
 REFERENCE_PATH = Path(__file__).resolve().parents[3] / "data" / "reference" / "hotspot_regions.csv"
 
 
@@ -21,6 +23,8 @@ class Region:
 
 @lru_cache
 def _load() -> dict[str, Region]:
+    if not REFERENCE_PATH.exists():
+        raise FileNotFoundError(f"hotspot_regions.csv not found at {REFERENCE_PATH}")
     out: dict[str, Region] = {}
     with REFERENCE_PATH.open(encoding="utf-8") as f:
         for row in csv.DictReader(f):

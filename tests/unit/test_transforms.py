@@ -23,6 +23,7 @@ def test_normalize_congest_level_maps_korean_to_score():
     assert normalize_congest_level("약간 붐빔") == 3
     assert normalize_congest_level("붐빔") == 4
     assert normalize_congest_level("알 수 없음") == 0
+    assert normalize_congest_level(" 여유 ") == 1  # strip 적용 검증
 
 
 def test_sanitize_population_swaps_min_max_when_inverted():

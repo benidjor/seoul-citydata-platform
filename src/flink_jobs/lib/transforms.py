@@ -30,6 +30,11 @@ def sanitize_population(p_min: int | None, p_max: int | None) -> tuple[int | Non
 
 
 def enrich_hotspot_silver(bronze: dict[str, Any]) -> dict[str, Any] | None:
+    """Bronze dict 를 silver dict 로 변환. region 미매핑 시 None drop.
+
+    silver_arrival_ts 는 본 함수 진입 시점의 UTC wall clock 을 naive isoformat 으로 박는다.
+    Iceberg 의 timestamp without timezone 컬럼 매핑 가정.
+    """
     region = lookup(bronze.get("area_code", ""))
     if region is None:
         return None
