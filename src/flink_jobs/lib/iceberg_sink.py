@@ -13,7 +13,7 @@ def register_iceberg_catalog(t_env: TableEnvironment, catalog_alias: str = "ice"
     warehouse = f"s3://{s.iceberg_warehouse_bucket}/warehouse"
 
     ddl = f"""
-    CREATE CATALOG {catalog_alias} WITH (
+    CREATE CATALOG IF NOT EXISTS {catalog_alias} WITH (
       'type' = 'iceberg',
       'catalog-type' = 'rest',
       'uri' = '{rest_uri}',
