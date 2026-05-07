@@ -1,8 +1,8 @@
 # Day 4 silver fix — 7 단계 진단 + 진짜 root cause closure
 
-> 직전 archive (`2026-05-07-day-3-task-3.4-silver-debug.md`) 의 F2 fallback 진입 상태에서 Day 4 first task 로 silver fix 재개. 누적 12 + 신규 7 단계 진단 끝에 진짜 root cause = **`com.codahale.metrics.Histogram` ClassLoader 충돌** 식별 및 1줄 fix.
+> **🔗 직전 archive (silver 0 silent fail 진단)**: [`2026-05-07-day-3-task-3.4-silver-debug.md`](./2026-05-07-day-3-task-3.4-silver-debug.md) — Day 3 Task 3.4 의 누적 12 fix 시도 + F2 fallback 결정. 본 archive 가 그 closure.
 >
-> 이전 archive: `2026-05-07-day-3-task-3.4-silver-debug.md` (Day 3 fix #1~5 + F2 fallback 결정).
+> 직전 archive 의 F2 fallback 진입 상태에서 Day 4 first task 로 silver fix 재개. 누적 12 + 신규 7 단계 진단 끝에 진짜 root cause = **`com.codahale.metrics.Histogram` ClassLoader 충돌** 식별 및 1줄 fix.
 
 ## 0. 한줄 결과
 
@@ -246,6 +246,9 @@ PyFlink (Java client) vs Lakekeeper (REST server) 의 silent 책임 소재가 �
 
 ## 7. 본 archive 의 위치
 
-- 상위 진단 archive (Day 3): `2026-05-07-day-3-task-3.4-silver-debug.md`
-- 이전 archives (Day 1~3): `2026-05-01-lakekeeper-v05-setup.md`, `2026-05-02-day-2-producers-troubleshooting.md`, `2026-05-05-day-3-pre-entry.md`
-- 본 archive (Day 4): `2026-05-08-day-4-silver-fix-resolved.md`
+- 상위 진단 archive (Day 3): [`2026-05-07-day-3-task-3.4-silver-debug.md`](./2026-05-07-day-3-task-3.4-silver-debug.md)
+- 이전 archives:
+    - Day 1: [`2026-05-01-day-1-lakekeeper-v05-setup.md`](./2026-05-01-day-1-lakekeeper-v05-setup.md)
+    - Day 2: [`2026-05-02-day-2-producers-troubleshooting.md`](./2026-05-02-day-2-producers-troubleshooting.md)
+    - Day 3 (진입 전): [`2026-05-05-day-3-pre-entry.md`](./2026-05-05-day-3-pre-entry.md)
+- 본 archive (Day 4): `2026-05-08-day-4-silver-fix-resolved.md` (현재 문서)
