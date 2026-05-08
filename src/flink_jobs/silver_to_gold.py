@@ -35,6 +35,8 @@ import time
 
 from pyflink.table import EnvironmentSettings, TableEnvironment
 
+# TODO Day 5 (3번째 streaming job 진입) 전 `flink_jobs/lib/classpath.py` 로 이동.
+# 현재 sibling module 의 `_` private 식별자를 import 하는 형태라 contract 가 모호.
 from flink_jobs.bronze_to_silver import _classpath
 from flink_jobs.lib.iceberg_sink import register_iceberg_catalog
 from platform_common import get_settings
@@ -91,6 +93,11 @@ def create_silver_source_with_watermark(t_env: TableEnvironment) -> None:
     Lakekeeper REST + S3FileIO 옵션을 direct connector 옵션으로 다시 박은
     임시 source-table 을 만들어 watermark 를 부여한다. 물리 데이터는
     catalog table `ice.silver.hotspot_congestion` 과 동일.
+
+    drift 주의: silver schema (`bronze_to_silver.py:create_silver_table` 17
+    컬럼) 가 변경되면 본 함수의 7 컬럼 (area_code / district / gu_code /
+    congest_level_score / population_min / population_max / api_response_ts)
+    도 동기 수정 필요.
     """
     s = get_settings()
     t_env.execute_sql(
