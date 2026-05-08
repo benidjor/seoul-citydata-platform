@@ -2,7 +2,7 @@
 
 PyFlink 1.20 + Iceberg 1.7.1 + Lakekeeper REST 환경에서 Silver→Gold 5분 텀블링 streaming + 데이터 신선도 SLO 리포트 + DuckDB 3-layer 검증 운영 매뉴얼.
 
-> **plan deviation 진단 archive**: 본 runbook 의 silver→gold + SLO + DuckDB 검증 코드 작성 시 식별된 plan deviation 6건은 [`2026-05-09-day-4-tasks-4_1-4_3.md`](../portfolio/troubleshooting/2026-05-09-day-4-tasks-4_1-4_3.md) archive 가 single source.
+> **plan 코드 보강 진단 archive**: 본 runbook 의 silver→gold + SLO + DuckDB 검증 코드 작성 시 식별된 plan 코드 보강 6건은 [`2026-05-09-day-4-tasks-4_1-4_3.md`](../portfolio/troubleshooting/2026-05-09-day-4-tasks-4_1-4_3.md) archive 참조.
 >
 > 진단 자산을 운영 절차로 정리. Gold mart 적재 / SLO 측정 / DuckDB 검증 마주칠 때 사용.
 
@@ -279,8 +279,8 @@ uv run --extra dev pytest tests/unit/test_slo_metrics.py -v
 ```
 
 원인:
-- **plan 의 414 hand-calc 오류 잔재** — `numpy.percentile([60,90,...,420], 95, method='linear')` = 393 이 정답. 414 는 같은 fixture 의 p99 truncation 값. test expected 가 393 으로 정정되어야 정확
-- **`_percentile` 구현이 truncation 사용** — `int(...)` 가 epsilon 으로 392 반환 가능. `int(round(...))` 로 정정
+- **plan 의 414 잔재** — `numpy.percentile([60,90,...,420], 95, method='linear')` = 393 이 정답. 414 는 사실 p99 의 값 (414.6 을 정수로 변환). test 기댓값이 393 으로 정정되어야 정확
+- **`_percentile` 구현이 소수점 버림 사용** — `int(...)` 가 epsilon 으로 392 반환 가능. `int(round(...))` 로 정정
 
 main HEAD `de2fd2a` 에서 둘 다 정정된 상태.
 
@@ -304,12 +304,12 @@ main HEAD `de2fd2a` 에서 둘 다 정정된 상태.
 
 본 PR (#26) 의 6 학습 패턴 ([archive §8](../portfolio/troubleshooting/2026-05-09-day-4-tasks-4_1-4_3.md) 참조):
 
-1. **plan deviation 식별 → 적용 → 양쪽 명문화** — silver fix 학습 위에서 plan 코드 vs main sibling 모듈 비교로 사전 catch (4건). docstring + commit body 양쪽 명문화가 drift 회피의 정공법
-2. **DuckDB iceberg ext vs pyiceberg + read_parquet** — Lakekeeper REST + UUID path 환경에서는 후자가 정공. `hive_partitioning=true` 가 결정적
-3. **spec / plan 의 hand-calc 수치 cross-check** — 414 / 393 사례. TDD 의 Red 단계에서 expected 값을 numpy / 수동 계산으로 cross-check 하는 절차가 plan 위 작업의 표준
+1. **plan 코드 보강 식별 → 적용 → 양쪽 명문화** — silver fix 학습 위에서 plan 코드 vs main sibling 모듈 비교로 사전 식별 (4건). docstring + commit body 양쪽 명문화가 drift 회피의 정공법
+2. **DuckDB iceberg ext vs pyiceberg + read_parquet** — Lakekeeper REST + UUID 경로 환경에서는 후자가 정공. `hive_partitioning=true` 가 결정적
+3. **spec / plan 의 기댓값 교차 검증** — 414 / 393 사례. TDD 의 Red 단계에서 기댓값을 numpy 호출 결과 또는 본인이 직접 따져 본 값으로 교차 검증하는 절차가 plan 위 작업의 표준
 4. **TDD 영역 분리** — 순수 함수 (`compute_freshness_seconds` / `_percentile` / `summarize`) = unit test, streaming job / I/O = smoke run. 두 영역 섞지 않음
 5. **PR body 의 grep 자체 점검 절차** — `gh pr create / edit --body-file` / `git commit -F` 직전 또는 직후 `grep -nE "포트폴리오|1번|어필|면접|JD|이력서|취업|회고|서사|narrative|사용자가" <body-file>` 0건 확인 필수
-6. **spec reviewer subagent 의 catch 가치** — implementer self-review + ruff 통과한 spec 위반 (duckdb_check 4번 query) 도 plan 명세 line-by-line 비교로 식별 가능. 두 단계 review (spec compliance → code quality) 의 첫 단계가 본 사례에서 RoI 입증
+6. **spec reviewer subagent 의 식별 가치** — implementer self-review + ruff 통과한 spec 위반 (duckdb_check 4번 query) 도 plan 명세 한 줄씩 비교로 식별 가능. 두 단계 review (spec compliance → code quality) 의 첫 단계가 본 사례에서 효과 입증
 
 ## 후속 작업 link
 
@@ -325,8 +325,8 @@ main HEAD `de2fd2a` 에서 둘 다 정정된 상태.
 ## 관련 문서
 
 - 트러블슈팅 archive
-    - [`2026-05-08-day-4-silver-fix-resolved.md`](../portfolio/troubleshooting/2026-05-08-day-4-silver-fix-resolved.md) — Day 4 Task 1 silver fix closure (ClassLoader fix + Lakekeeper v0.12.1)
-    - [`2026-05-09-day-4-tasks-4_1-4_3.md`](../portfolio/troubleshooting/2026-05-09-day-4-tasks-4_1-4_3.md) — 본 runbook 의 plan deviation 6건 진단 / 시도 / 결정 흐름
+    - [`2026-05-08-day-4-silver-fix-resolved.md`](../portfolio/troubleshooting/2026-05-08-day-4-silver-fix-resolved.md) — Day 4 Task 1 ClassLoader fix 적용으로 silver streaming silent commit fail 해결 (Lakekeeper v0.12.1 포함)
+    - [`2026-05-09-day-4-tasks-4_1-4_3.md`](../portfolio/troubleshooting/2026-05-09-day-4-tasks-4_1-4_3.md) — 본 runbook 의 plan 코드 보강 6건 진단 / 시도 / 결정 과정
 - 이전 runbook
     - [`day1_infra.md`](./day1_infra.md) — Day 1 인프라
     - [`day2_producers.md`](./day2_producers.md) — Day 2 producer 운영
