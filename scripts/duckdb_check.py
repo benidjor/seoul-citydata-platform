@@ -131,12 +131,12 @@ def main() -> None:
         if gold_paths:
             district_rows = con.execute(
                 """
-                SELECT district, window_start, avg_congest_score
+                SELECT district, avg_congest_score
                 FROM read_parquet(?, hive_partitioning = true)
                 QUALIFY row_number() OVER (
                     PARTITION BY district ORDER BY window_start DESC
                 ) = 1
-                ORDER BY district
+                ORDER BY avg_congest_score DESC
                 """,
                 [gold_paths],
             ).fetchall()
