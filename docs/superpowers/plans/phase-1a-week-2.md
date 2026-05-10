@@ -91,7 +91,7 @@ seoul-citydata-platform/
 │       ├── models/
 │       │   ├── sources.yml                (Week 1 → Week 2 modify: dim_place + bronze.places_static)
 │       │   └── marts/
-│       │       ├── dim_place.sql          (Task 6.4 신규 — staging-style view)
+│       │       ├── dim_place.py           (Task 6.4 신규 — python model, deviation D)
 │       │       └── chill_open_now.sql     (Task 8.2 신규 — 가장 핵심 mart)
 ├── infra/
 │   └── cloudflare/
@@ -738,7 +738,7 @@ git commit -m "feat: pyflink cdc consumer for silver.dim_place scd2 skeleton"
 
 **Files:**
 - Modify: `dbt/seoul/models/sources.yml` (silver.dim_place 추가)
-- Create: `dbt/seoul/models/marts/dim_place.sql`
+- Create: `dbt/seoul/models/marts/dim_place.py` _(2026-05-11 정정 — PR β 검증 중 dbt-duckdb adapter 의 Lakekeeper source 자동 read 미지원 확인 → Day 5 stg_hotspot_silver.py 와 동일 패턴(python model + lib 우회)으로 변환. deviation D.)_
 - Create: `docs/runbook/day6_cdc.md`
 
 **근거:** spec §6-1 Day 6 산출물 = "CDC 동작 데모". spec §9-1 Day 6 fallback = Postgres outbox + 폴링 producer.
@@ -760,26 +760,86 @@ git commit -m "feat: pyflink cdc consumer for silver.dim_place scd2 skeleton"
           - name: is_current
 ```
 
-- [ ] **Step 2: dbt mart `dim_place.sql` (current snapshot view)**
+- [ ] **Step 2: dbt mart `dim_place.py` (python model — current snapshot view)** _(2026-05-11 정정 — dbt-duckdb adapter 의 Lakekeeper source 자동 read 미지원 → Day 5 stg_hotspot_silver.py 와 동일 패턴. deviation D.)_
 
-```sql
-{{ config(materialized='view', schema='gold') }}
+```python
+"""dbt python model — gold.dim_place (silver SCD2 의 current snapshot view).
 
--- "현재 활성" 가게만 추출. SCD2 폐쇄 전이라도 latest 1행으로 좁힌다.
-with ranked as (
-    select
-        *,
-        row_number() over (partition by place_id order by valid_from desc) as rn
-    from {{ source('silver', 'dim_place') }}
-)
-select
-    place_id, biz_reg_no, name, category, district, gu_code,
-    latitude, longitude, open_hour, close_hour, status,
-    valid_from
-from ranked
-where rn = 1
-  and cdc_op <> 'd'
-  and status = 'active'
+Day 6 Task 6.4 deviation D — plan 의 SQL view (`{{ source('silver', 'dim_place') }}`)
+는 dbt-duckdb adapter 가 Lakekeeper Iceberg source 의 external_location 을 자동
+read 못함. Day 5 stg_hotspot_silver.py 와 동일한 우회 패턴 — pyiceberg `plan_files()`
+로 actual S3 path 받아 DuckDB `read_parquet(?, hive_partitioning=true)` 로 직접 read.
+
+핵심 결정:
+- materialized="table" (python model 자체 제약 + DuckDB in-memory 환경에선 storage 차이 0)
+- "현재 활성 가게" = row_number=1 over (partition by place_id order by valid_from desc)
+  + cdc_op <> 'd' + status='active'
+- empty source (snapshot 없음) → schema-only empty result (`WHERE 1=0`).
+"""
+from __future__ import annotations
+
+
+def model(dbt, session):
+    dbt.config(materialized="table", schema="gold")
+
+    from flink_jobs.lib.duckdb_iceberg import (
+        build_catalog,
+        configure_duckdb,
+        table_paths,
+    )
+
+    catalog = build_catalog()
+    file_paths = table_paths(catalog, "silver.dim_place")
+
+    if not file_paths:
+        return session.sql(
+            """
+            SELECT
+                CAST(NULL AS BIGINT)    AS place_id,
+                CAST(NULL AS VARCHAR)   AS biz_reg_no,
+                CAST(NULL AS VARCHAR)   AS name,
+                CAST(NULL AS VARCHAR)   AS category,
+                CAST(NULL AS VARCHAR)   AS district,
+                CAST(NULL AS VARCHAR)   AS gu_code,
+                CAST(NULL AS DOUBLE)    AS latitude,
+                CAST(NULL AS DOUBLE)    AS longitude,
+                CAST(NULL AS INTEGER)   AS open_hour,
+                CAST(NULL AS INTEGER)   AS close_hour,
+                CAST(NULL AS VARCHAR)   AS status,
+                CAST(NULL AS TIMESTAMP) AS valid_from
+            WHERE 1 = 0
+            """
+        )
+
+    configure_duckdb(session)
+
+    return session.sql(
+        f"""
+        WITH ranked AS (
+            SELECT
+                *,
+                row_number() OVER (PARTITION BY place_id ORDER BY valid_from DESC) AS rn
+            FROM read_parquet({file_paths!r}, hive_partitioning = true)
+        )
+        SELECT
+            place_id,
+            biz_reg_no,
+            name,
+            category,
+            district,
+            gu_code,
+            latitude,
+            longitude,
+            open_hour,
+            close_hour,
+            status,
+            valid_from
+        FROM ranked
+        WHERE rn = 1
+          AND cdc_op <> 'd'
+          AND status = 'active'
+        """
+    )
 ```
 
 - [ ] **Step 3: dbt run + test**
@@ -831,7 +891,7 @@ Debezium 셋업 4시간 초과 시 우회:
 - [ ] **Step 5: Commit**
 
 ```bash
-git add dbt/seoul/models/sources.yml dbt/seoul/models/marts/dim_place.sql docs/runbook/day6_cdc.md
+git add dbt/seoul/models/sources.yml dbt/seoul/models/marts/dim_place.py docs/runbook/day6_cdc.md
 git commit -m "feat: dim_place dbt mart + day6 cdc runbook"
 ```
 
