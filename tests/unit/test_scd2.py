@@ -3,9 +3,7 @@
 Day 6 Task 6.3 의 TDD 단계 — 실패 → 구현 → 통과. Flink job 자체는 PyFlink
 런타임 의존이라 단위 테스트 대상 아님. envelope 파싱 / row 변환만 본 모듈에서 보장.
 """
-from datetime import datetime, timezone
-
-import pytest
+from datetime import UTC, datetime
 
 from flink_jobs.lib.scd2 import (
     Scd2Row,
@@ -58,7 +56,7 @@ def test_to_scd2_row_create_marks_current():
     assert row.place_id == 1
     assert row.is_current is True
     # ts_ms=1714490000000 → 2024-04-30 15:13:20 UTC. naive UTC 로 변환.
-    assert row.valid_from == datetime(2024, 4, 30, 15, 13, 20, tzinfo=timezone.utc).replace(tzinfo=None)
+    assert row.valid_from == datetime(2024, 4, 30, 15, 13, 20, tzinfo=UTC).replace(tzinfo=None)
     assert row.valid_to is None
     assert row.cdc_op == "c"
 

@@ -11,7 +11,7 @@ append-only 변환만 다룬다.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -78,7 +78,7 @@ def to_scd2_row(rec: CdcRecord) -> Scd2Row:
     - ``is_current`` = ``op != 'd'`` — delete 면 false, 그 외 true.
     """
     p = rec.payload
-    valid_from = datetime.fromtimestamp(rec.ts_ms / 1000, tz=timezone.utc).replace(tzinfo=None)
+    valid_from = datetime.fromtimestamp(rec.ts_ms / 1000, tz=UTC).replace(tzinfo=None)
     return Scd2Row(
         place_id=int(p["place_id"]),
         biz_reg_no=str(p.get("biz_reg_no") or ""),
