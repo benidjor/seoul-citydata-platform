@@ -169,18 +169,20 @@ seoul-citydata-platform/
       retries: 18
 ```
 
-> Kafka 컨테이너 안 hostname 은 `kafka` 가 아니라 `localhost` 광고 모드로 떠 있다 (Week 1 KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092). connect 컨테이너는 docker network 안에서 접근하므로 advertised 가 localhost 면 연결 실패한다. **bootstrap 을 `kafka:9092` 로 바꾸기 위해 advertised listener 를 dual 로 수정한다**:
+> _(2026-05-11 정정 — 본 프로젝트는 `apache/kafka:4.0.0` image. Bitnami `KAFKA_CFG_*` 형식 표기는 잘못. PR α 안에서 환경변수 + binary path 일괄 정정.)_
 
-기존 Kafka 서비스의 `KAFKA_CFG_ADVERTISED_LISTENERS` 라인을 다음으로 교체:
+> Kafka 컨테이너 안 hostname 은 `kafka` 가 아니라 `localhost` 광고 모드로 떠 있다 (Week 1 KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092). connect 컨테이너는 docker network 안에서 접근하므로 advertised 가 localhost 면 연결 실패한다. **bootstrap 을 `kafka:29092` 로 바꾸기 위해 advertised listener 를 dual 로 수정한다**:
+
+기존 Kafka 서비스의 `KAFKA_ADVERTISED_LISTENERS` 라인을 다음으로 교체:
 
 ```yaml
-      KAFKA_CFG_LISTENERS: INTERNAL://:29092,EXTERNAL://:9092,CONTROLLER://:9093
-      KAFKA_CFG_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:9092
-      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
-      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_LISTENERS: INTERNAL://:29092,EXTERNAL://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
 ```
 
-기존 `KAFKA_CFG_LISTENERS`, `KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP`, `KAFKA_CFG_INTER_BROKER_LISTENER_NAME` 라인은 위 4 줄로 대체된다. 호스트(macOS) 에서는 여전히 `localhost:9092` 로 접속 가능하고, docker network 안의 `kafka-connect` 는 `kafka:29092` 를 사용한다.
+기존 `KAFKA_LISTENERS`, `KAFKA_LISTENER_SECURITY_PROTOCOL_MAP`, `KAFKA_INTER_BROKER_LISTENER_NAME` 라인은 위 4 줄로 대체된다. 호스트(macOS) 에서는 여전히 `localhost:9092` 로 접속 가능하고, docker network 안의 `kafka-connect` 는 `kafka:29092` 를 사용한다.
 
 connect 서비스의 `BOOTSTRAP_SERVERS` 는 `kafka:29092` 로 수정:
 
@@ -358,7 +360,7 @@ Expected: 마지막 status JSON 에 `"connector":{"state":"RUNNING"}` + `"tasks"
 Debezium initial snapshot 이 5행 발행:
 Run:
 ```bash
-docker compose exec -T kafka /opt/bitnami/kafka/bin/kafka-console-consumer.sh \
+docker compose exec -T kafka /opt/kafka/bin/kafka-console-consumer.sh \
   --bootstrap-server localhost:9092 \
   --topic place.master.cdc.v1 \
   --from-beginning --max-messages 5 --timeout-ms 10000
@@ -369,7 +371,7 @@ CDC live test:
 Run: `docker compose exec -T postgres psql -U scp -d scp -c "UPDATE places SET name='강남 모닝카페 ☕' WHERE biz_reg_no='1208612345';"`
 Run:
 ```bash
-docker compose exec -T kafka /opt/bitnami/kafka/bin/kafka-console-consumer.sh \
+docker compose exec -T kafka /opt/kafka/bin/kafka-console-consumer.sh \
   --bootstrap-server localhost:9092 \
   --topic place.master.cdc.v1 \
   --max-messages 1 --timeout-ms 10000
@@ -2933,7 +2935,7 @@ uv run python -m flink_jobs.slo_metrics
 ./scripts/memory_watch.sh                  # 80% 미만
 
 # 토픽
-docker compose exec -T kafka /opt/bitnami/kafka/bin/kafka-topics.sh \
+docker compose exec -T kafka /opt/kafka/bin/kafka-topics.sh \
   --bootstrap-server localhost:9092 --list
 # expected: seoul.hotspot.congestion.v1 / seoul.transit.subway.v1
 #           place.master.cdc.v1 / user.events.v1
