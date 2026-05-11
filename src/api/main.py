@@ -8,11 +8,13 @@ Run:
   - Lakekeeper / MinIO 컨테이너 가동 중
   - silver/gold Iceberg table 적재 (bronze_to_silver / silver_to_gold streaming)
 """
+
 from __future__ import annotations
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from api.routes.chill_open import router as chill_open_router
 from api.routes.hotspots import router as hotspots_router
 
 
@@ -27,6 +29,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.include_router(hotspots_router)
+    app.include_router(chill_open_router)
 
     @app.get("/health")
     def health() -> dict:
