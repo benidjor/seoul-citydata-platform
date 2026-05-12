@@ -285,6 +285,29 @@ services:
       timeout: 5s
       retries: 18
 
+  # Day 9 전용. profile=spark 로 평상시 미기동 (24GB 메모리 한계 — spec §9-3).
+  # 일시 기동 직전 `docker compose stop airflow-scheduler` 로 ~800MB 회수 후
+  # `docker compose --profile spark up -d spark` → MERGE INTO/Compaction 후
+  # `docker compose --profile spark down` + airflow-scheduler 재기동.
+  spark:
+    build: ./infra/spark
+    image: scp/spark:3.5.3-iceberg
+    container_name: scp-spark
+    profiles: ["spark"]
+    depends_on:
+      lakekeeper:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_REGION: us-east-1
+    volumes:
+      - ./infra/spark/conf:/opt/spark/conf:ro
+      - ./infra/spark/jobs:/workspace/jobs:ro
+    command: ["sleep", "infinity"]
+
 volumes:
   kafka_data:
   postgres_data:
