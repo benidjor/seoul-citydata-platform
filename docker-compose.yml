@@ -24,6 +24,12 @@ x-airflow-common: &airflow-common
     # 무효.
     LAKEKEEPER_URL: http://lakekeeper:8181
     MINIO_ENDPOINT: http://minio:9000
+    # Day 9 PR γ — iceberg_maintenance DAG 의 BashOperator 가 host docker
+    # daemon 으로 `docker run --rm scp/spark` 호출 시, host volume 의 source
+    # 경로 (infra/spark/conf, infra/spark/jobs) 를 절대 경로로 지정해야 한다.
+    # Airflow 컨테이너 안의 상대 경로는 docker daemon (= host) 입장에서 무의미.
+    # ${PWD} = docker compose 호출 시점 host CWD = 프로젝트 루트.
+    PROJECT_ROOT: ${PROJECT_ROOT:-${PWD}}
   user: "${AIRFLOW_UID:-50000}:0"
   volumes:
     - ./airflow/dags:/opt/airflow/dags
@@ -37,6 +43,12 @@ x-airflow-common: &airflow-common
     # 하게 `flink_jobs.lib.duckdb_iceberg` / `platform_common.config` 를
     # import. PYTHONPATH 는 dbt_full_run.py 의 dbt_env 에서 잡아준다.
     - ./src:/opt/airflow/repo-src:ro
+    # Day 9 PR γ — iceberg_maintenance DAG 가 host docker daemon 통제.
+    # docker socket mount 로 Airflow 컨테이너 안에서 `docker run --rm
+    # scp/spark` 호출 가능. 보안 limitation = local dev only — Phase 2
+    # Oracle Cloud 배포 시 SparkSubmitOperator / SSHOperator / Spark on K8s
+    # 재설계 의무 (Airflow 컨테이너가 host docker daemon root 권한 직접 사용).
+    - /var/run/docker.sock:/var/run/docker.sock
 
 services:
   kafka:
