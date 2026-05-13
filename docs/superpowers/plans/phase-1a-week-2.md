@@ -3104,7 +3104,61 @@ GitHub Actions 두 잡 (`python` + `dbt`) green 확인.
 - GitHub Actions green
 - 공개 도메인 + `/chill` 접속 가능
 
-이 시점에 Phase 1A 단독 6~7페이지 포트폴리오 제출 가능 (Airflow 본진 사용 페이지 포함). **Phase 1B (Week 3 plan, Day 11~14) 진입 가능**.
+이 시점에 Phase 1A 단독 6~7페이지 포트폴리오 제출 가능 (Airflow 본진 사용 페이지 포함). **Phase 1B (Week 3 plan, Day 11-18, 8일 확장 결정 2026-05-14) 진입 가능**.
+
+---
+
+## Day 9 잔여 정정 + Day 10 결정 일괄 정리 (PR δ, 2026-05-14)
+
+본 section 은 Day 9 PR α (#53) / β (#54) / γ (#55) + Day 10 PR α (#57) / β (#58) / γ (#59) 의 사후 결정 / deviation 일괄 정리. `[[deferred-items-post-day10]]` §5 결정 SoT.
+
+### (1) Day 9 13 deviation (PR α / β / γ 사후 우회 + 보강)
+
+Day 9 작업 도중 plan 본문 대비 변경 / 우회 / 보강 13건. 각 deviation 의 정확한 코드 변경 + diff = 각 PR commit body + `docs/portfolio/troubleshooting/2026-05-12-day-9-archive.md` 단일 출처. 본 plan SoT 에는 식별자 + 사유만 박음:
+
+- **#9.1 PR α (Task 9.1 Spark profile)** — Spark 4.0 → 3.5.3-python3 호환 결정 (iceberg-spark-runtime 1.7.1 이 3.5 까지만 지원).
+- **#9.2 PR α (Task 9.1)** — iceberg-spark-runtime-3.5_2.12-1.7.1 jar 직접 download (image build 시 잡합).
+- **#9.3 PR α (Task 9.1)** — hadoop-aws 3.3.4 + aws-java-sdk-bundle 1.12.262 동시 잡합 (Lakekeeper REST + MinIO S3 호환).
+- **#9.4 PR α (Task 9.1)** — Iceberg REST `seoul` warehouse 명시 (Spark / PyFlink 모두 동일).
+- **#9.5 PR α (Task 9.2)** — DOCKER socket 마운트 불가 한계 발견 (Day 9 archive §1.6 SoT, Phase 1A 한정).
+- **#9.6 PR α (Task 9.2)** — pyiceberg dim_place direct write fallback (Spark MERGE 검증 후 멱등성 hash 일치 확정).
+- **#9.7 PR α (Task 9.2)** — Spark MERGE 멱등성 hash = `b72679e91078` (2회 실행 동일).
+- **#9.8 PR β (Task 9.3)** — `compaction_silver.py` 분리 신규 (`rewrite_data_files` Spark action).
+- **#9.9 PR β (Task 9.3)** — `cost_report.py` 분리 + S3 PutObject 비용 추정 산식.
+- **#9.10 PR β (Task 9.3)** — Compaction 실측 = 파일 475 → 3 (-99.4%), 쿼리 1.86s → 0.08s (23x 가속), 운영 비용 $0.83/월.
+- **#9.11 PR γ (Task 9.3)** — `iceberg_maintenance` DAG Option B 패턴 (BashOperator + dbt-venv subprocess, Airflow base image 에 duckdb / pyiceberg 미설치 회피).
+- **#9.12 PR γ (Task 9.3)** — Discord webhook `on_success_callback` (위반 SLO + before/after 메트릭 메시지).
+- **#9.13 PR γ (Task 9.3)** — `max_active_tis_per_dag=3` (병렬 Spark submit 안전).
+
+13건 = plan 작성 시점 (Day 5-6 buffer) 예상 못한 운영 사후 결정. plan 의 일반 deviation pattern (D / E) 와 동일 형식.
+
+### (2) Day 10 PR α Path B 결정 (silver Iceberg `kafka_ts` 부재)
+
+Day 10 PR α 작업 도중 silver Iceberg catalog 의 `kafka_ts` 컬럼 부재 발견 (`bronze_to_silver.py` 의 INSERT 가 `CURRENT_TIMESTAMP AS silver_arrival_ts` 로 대체 채움). 두 path 검토:
+
+| Path | Platform Latency 정의 | 작업량 |
+|---|---|---|
+| **B (채택)** | `gold - silver_arrival_ts` (silver→gold 우리 통제 구간) | gold ALTER + `silver_to_gold.py` 정정만 |
+| C (보류) | `gold - kafka_ts(METADATA)` (Kafka→gold) | silver ALTER + `bronze_to_silver.py` 정정 + Flink job 2개 재기동 |
+
+Path B 한계 = bronze→silver lag 미포함 (Kafka broker → silver 적재). Phase 1B/2 의 silver schema 정정 시점에 Path C 로 전환 가능 (`compute_platform_latency_seconds(source_ts, gold_ts)` 의 `source_ts` 변수명 = future-proof reuse). spec §6-2 + portfolio §4.4 모두 Path B 결정 SoT.
+
+### (3) Task 10.1 file name 불일치 (`system_diagram.md` → `data-flow.md` reuse)
+
+Task 10.1 의 plan 본문 (line 2546-2589) 은 `docs/architecture/system_diagram.md` 신규 작성을 명시. 실제 Day 10 PR β (#58, 2026-05-13) 에서 기존 `docs/architecture/data-flow.md` 재사용 + `data_lineage.md` 신규 작성으로 결정.
+
+사유: `data-flow.md` (Day 2-) 가 이미 컴포넌트 다이어그램 보유 + Day 10 시점 갱신 필요 → 신규 file 작성보다 기존 file 정정이 단일 출처 원칙 일치.
+
+### (4) Day 10 PR γ 변경 (README 전면 갱신 + Phase 1A 종료 게이트)
+
+Day 10 PR γ (#59, 2026-05-14):
+
+- README 260 LOC 일괄 갱신 (Phase 1A 종료 milestone, `phase-1a-v1` tag 발표).
+- Phase 1A 종료 게이트 검증 명령 5종 (`pytest` / `ruff check` / `dbt parse` / `docker compose ps` / `git tag -l phase-1a-v1`).
+- "두 종" → "두 가지" 일괄 변경 (10 file 26 인스턴스, SLO 문서 톤 일관).
+- `data-flow.md` Day 10 정정 (Path B 반영).
+
+본 변경은 plan SoT 의 Task 10.4 (README 전면 갱신) 본문에 이미 명시. 본 PR δ 는 file name 불일치 (§3) 정정만 추가.
 
 ---
 
