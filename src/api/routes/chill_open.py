@@ -9,7 +9,9 @@ deviation 8.2-A (사전 채택) — plan 본문 (line 1854~1888) 의 inline `CRE
   archive `2026-05-09-day-4-tasks-4_1-4_3.md` 학습. Lakekeeper REST UUID-prefix
   path 를 DuckDB `iceberg_scan` 이 resolve 못함.
 - DuckDB SECRET DDL 은 `api.deps.duck_connection()` 이 lib `configure_duckdb`
-  위임으로 한 곳에서 처리. SQL injection 표면 lib `_quote_literal` 한 곳.
+  위임으로 한 곳에서 처리. route 는 요청별 `duck_cursor()` (= 같은 connection 의
+  `.cursor()`) 를 써서 SECRET 을 공유하면서 threadpool 동시 요청에 안전.
+  SQL injection 표면 lib `_quote_literal` 한 곳.
 - `bronze.places_static` 은 정적 parquet 라 lib catalog 미경유 — DuckDB `read_parquet()`
   로 직접 read. settings 에서 warehouse bucket 만 가져옴.
 

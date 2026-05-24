@@ -10,7 +10,7 @@ iceberg_maintenance DAG dependency chain 이 보장.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from pyspark.sql import SparkSession
 
@@ -28,7 +28,7 @@ def snapshot_count(spark: SparkSession, table: str) -> int:
 
 def main() -> None:
     spark = session()
-    older_than = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
+    older_than = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S.%f")
 
     for table in TABLES:
         n_before = snapshot_count(spark, table)
