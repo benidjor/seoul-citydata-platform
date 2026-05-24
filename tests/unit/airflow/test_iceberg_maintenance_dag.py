@@ -227,3 +227,26 @@ def test_send_compaction_report_parses_json_string():
     with patch.dict("os.environ", {"DISCORD_WEBHOOK_URL": ""}, clear=False):
         send_compaction_report(task_instance=ti)
     # exception 0건 = PASS
+
+
+def test_send_compaction_report_multi_table():
+    """{"tables":[...]} payload → 테이블별 reduction 라인 (gold + silver)."""
+    import json
+    from unittest.mock import MagicMock, patch
+
+    from common.callbacks import send_compaction_report  # type: ignore
+
+    ti = MagicMock()
+    ti.xcom_pull.side_effect = [
+        json.dumps({"tables": [
+            {"table": "silver.hotspot_congestion", "files": 6, "bytes": 30_000_000, "snapshots": 10},
+            {"table": "gold.fact_hotspot_congestion_5min", "files": 9161, "bytes": 9_900_000, "snapshots": 3314},
+        ]}),
+        json.dumps({"tables": [
+            {"table": "silver.hotspot_congestion", "files": 6, "bytes": 30_000_000, "snapshots": 5},
+            {"table": "gold.fact_hotspot_congestion_5min", "files": 8, "bytes": 9_900_000, "snapshots": 5},
+        ]}),
+    ]
+    with patch.dict("os.environ", {"DISCORD_WEBHOOK_URL": ""}, clear=False):
+        send_compaction_report(task_instance=ti)
+    # exception 0건 = 핵심 PASS 조건
