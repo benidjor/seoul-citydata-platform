@@ -14,7 +14,7 @@ import json
 import os
 import uuid
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import FastAPI, Header, HTTPException, status
@@ -75,7 +75,7 @@ async def post_events(batch: EventBatch, authorization: str = Header(...)) -> di
     if producer is None:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "producer not ready")
 
-    ingest_ts = datetime.now(timezone.utc).isoformat()
+    ingest_ts = datetime.now(UTC).isoformat()
     for ev in batch.events:
         await producer.send_and_wait(
             TOPIC,
